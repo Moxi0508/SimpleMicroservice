@@ -86,14 +86,22 @@ def get_pet(pet_id: UUID):
     return pets[pet_id]
 
 
-@app.patch("/pets/{pet_id}", response_model=PetRead)
-def update_pet(pet_id: UUID, update: PetUpdate):
+@app.put("/pets/{pet_id}", response_model=PetRead)
+def update_pet(pet_id: UUID, pet_data: PetCreate) -> PetRead:
     if pet_id not in pets:
-        raise HTTPException(status_code=404, detail="Pet not found")
-    stored = pets[pet_id].model_dump()
-    stored.update(update.model_dump(exclude_unset=True))
-    pets[pet_id] = PetRead(**stored)
-    return pets[pet_id]
+        raise HTTPException(status_code=404, detail=f"Pet with ID {pet_id} not found.")
+
+    updated_pet = PetRead(id=pet_id, **pet_data.model_dump())
+    pets[pet_id] = updated_pet
+    return updated_pet
+
+
+@app.delete("/pets/{pet_id}")
+def delete_pet(pet_id: UUID) -> None:
+    if pet_id not in pets:
+        raise HTTPException(status_code=404, detail=f"Pet with ID {pet_id} not found.")
+    del pets[pet_id]
+    return
 
 # -----------------------------------------------------------------------------
 # Owner endpoints
@@ -130,14 +138,26 @@ def get_owner(owner_id: UUID):
         raise HTTPException(status_code=404, detail="Owner not found")
     return owners[owner_id]
 
-@app.patch("/owners/{owner_id}", response_model=OwnerRead)
-def update_owner(owner_id: UUID, update: OwnerUpdate):
+
+@app.put("/owners/{owner_id}", response_model=OwnerRead)
+def update_owner(owner_id: UUID, owner_data: OwnerCreate) -> OwnerRead:
     if owner_id not in owners:
-        raise HTTPException(status_code=404, detail="Owner not found")
-    stored = owners[owner_id].model_dump()
-    stored.update(update.model_dump(exclude_unset=True))
-    owners[owner_id] = OwnerRead(**stored)
-    return owners[owner_id]
+        raise HTTPException(status_code=404, detail=f"Owner with ID {owner_id} not found.")
+    updated_owner = OwnerRead(
+        id=owner_id,
+        created_at=owners[owner_id].created_at,
+        **owner_data.model_dump()
+    )
+    owners[owner_id] = updated_owner
+    return updated_owner
+
+
+@app.delete("/owners/{owner_id}")
+def delete_owner(owner_id: UUID) -> None:
+    if owner_id not in owners:
+        raise HTTPException(status_code=404, detail=f"Owner with ID {owner_id} not found.")
+    del owners[owner_id]
+    return
 
 # -----------------------------------------------------------------------------
 # Root
